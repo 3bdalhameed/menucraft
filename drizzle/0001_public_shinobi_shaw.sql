@@ -1,0 +1,1 @@
+ALTER TABLE `restaurants` ADD `write_token` text DEFAULT '' NOT NULL;

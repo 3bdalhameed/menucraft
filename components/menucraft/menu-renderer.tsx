@@ -1,5 +1,6 @@
 'use client';
 import {useState,useEffect,useMemo} from 'react';
+import {createPortal} from 'react-dom';
 import type {Menu,State,Item} from '@/lib/menucraft/model';
 import {X,Star,Flame,Leaf,CheckCircle2} from 'lucide-react';
 
@@ -99,7 +100,7 @@ export function MenuRenderer({menu,profile}:{menu:Menu;profile:State['profile']}
 
     {profile.hours&&<footer>{profile.hours} · {profile.address}</footer>}
 
-    {detail&&<div className="item-detail-overlay">
+    {detail&&typeof document!=='undefined'&&createPortal(<div className="item-detail-overlay" dir={ar?'rtl':'ltr'} style={{fontFamily:d.font,fontSize:d.fontSize}}>
       <button className="item-detail-backdrop" aria-label={t('Close','إغلاق')} onClick={()=>setDetail(null)}/>
       <div className="item-detail" style={{color:d.primary}}>
         <button className="item-detail-close" aria-label={t('Close','إغلاق')} onClick={()=>setDetail(null)}><X size={18}/></button>
@@ -119,7 +120,7 @@ export function MenuRenderer({menu,profile}:{menu:Menu;profile:State['profile']}
           {detail.available&&<div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,opacity:.7,marginTop:10}}><CheckCircle2 size={13} color="#16a34a"/>{t('Available now','متوفر الآن')}</div>}
         </div>
       </div>
-    </div>}
+    </div>,document.body)}
 
   </div>;
 }

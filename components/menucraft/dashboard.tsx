@@ -1,12 +1,36 @@
 'use client';
 import {useState,useEffect} from 'react';
 import Studio from '@/components/menucraft/studio';
-import {BookOpen,LayoutDashboard,Palette,Layers,Utensils,Image,QrCode,Settings,Plus,ArrowUpRight,ChevronRight,Bell,Globe,Star} from 'lucide-react';
+import {Input} from '@/components/ui/input';
+import type {ChatGPTUser} from '@/app/chatgpt-auth';
+import {BookOpen,LayoutDashboard,Palette,Layers,Utensils,Image,QrCode,Settings,Plus,ArrowUpRight,ChevronRight,Bell,Globe,Star,UserCircle,LogOut,Mail} from 'lucide-react';
 import {SidebarProvider,Sidebar,SidebarContent,SidebarHeader,SidebarMenu,SidebarMenuItem,SidebarMenuButton,SidebarFooter,SidebarTrigger} from '@/components/ui/sidebar';
 
-const links=[['Overview',LayoutDashboard],['Menus',BookOpen],['Menu Designer',Palette],['Categories',Layers],['Items',Utensils],['Media Library',Image],['QR Codes',QrCode],['Themes',Palette],['Restaurant Settings',Settings]] as const;
+const links=[['Overview',LayoutDashboard],['Menus',BookOpen],['Menu Designer',Palette],['Categories',Layers],['Items',Utensils],['Media Library',Image],['QR Codes',QrCode],['Themes',Palette],['Restaurant Settings',Settings],['Account',UserCircle]] as const;
 
-export default function Home(){
+function AccountPage({user}:{user:ChatGPTUser}){
+  const initials=(user.displayName||user.email||'?').trim().slice(0,1).toUpperCase();
+  return <div className="editor-panel settings-grid">
+    <h2 style={{gridColumn:'1/-1'}}>Your account</h2>
+    <div style={{gridColumn:'1/-1',display:'flex',alignItems:'center',gap:14,marginBottom:8}}>
+      <div className="avatar" style={{width:52,height:52,fontSize:18,background:'#f6ecd6',color:'#1b4332'}}>{initials}</div>
+      <div>
+        <b style={{fontSize:15}}>{user.displayName}</b>
+        <p style={{margin:'2px 0 0',fontSize:12,color:'#6b7b6f',display:'flex',alignItems:'center',gap:5}}><Mail size={12}/>{user.email}</p>
+      </div>
+    </div>
+    <label>Full name<Input value={user.fullName||user.displayName} disabled/></label>
+    <label>Email<Input value={user.email} disabled/></label>
+    <label>Account ID<Input value={user.userId} disabled/></label>
+    <label>Role<Input value="Restaurant owner" disabled/></label>
+    <div style={{gridColumn:'1/-1'}}>
+      <p>Your account is managed by your ChatGPT sign-in. Restaurant details like name, address and branches live in <b>Restaurant Settings</b>.</p>
+      <a href="/signout-with-chatgpt?return_to=/" target="_top" style={{display:'inline-flex',alignItems:'center',gap:6,color:'#b91c1c'}}><LogOut size={13}/>Sign out</a>
+    </div>
+  </div>;
+}
+
+export default function Home({user}:{user:ChatGPTUser}){
   const [active,setActive]=useState('Overview');
   const [data,setData]=useState<any>(null);
   const [loading,setLoading]=useState(true);
@@ -23,12 +47,19 @@ export default function Home(){
   const totalQr=data?.analytics?.find((a:any)=>a.kind==='qr')?.count||0;
   const publishedCount=data?.published?.length||0;
   const draftCount=(data?.menus?.length||0)-publishedCount;
+  const initials=(user.displayName||user.email||'?').trim().slice(0,1).toUpperCase();
 
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="brand"><span><Utensils size={21}/></span>MenuCraft<span className="brand-dot">.</span></div>
+          <div className="brand">
+            <span style={{position:'relative'}}>
+              <Utensils size={21}/>
+              <img src="/logo.png" alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%'}} onError={e=>{e.currentTarget.style.display='none'}}/>
+            </span>
+            Menu<span className="brand-craft">Craft</span><span className="brand-dot">.</span>
+          </div>
           <div className="restaurant">
             {data?.profile?.logo?<img src={data.profile.logo} alt="Logo" style={{width:38,height:38,borderRadius:9,objectFit:'cover'}}/>:<div className="monogram">{(data?.profile?.name||'O')[0]}</div>}
             <div><b>{data?.profile?.name||'Your restaurant'}</b><small>Restaurant workspace</small></div>
@@ -48,7 +79,10 @@ export default function Home(){
         </SidebarContent>
         <SidebarFooter>
           <div className="workspace-status"><span className="status-dot"/> Your restaurant, beautifully served.</div>
-          <div className="restaurant"><div className="avatar">AM</div><div><b>Account</b><small>Restaurant owner</small></div></div>
+          <button className="restaurant" style={{width:'100%',border:'1px solid #e8ddc9',background:'none',cursor:'pointer'}} onClick={()=>setActive('Account')}>
+            <div className="avatar">{initials}</div>
+            <div><b>{user.displayName}</b><small>Restaurant owner</small></div>
+          </button>
         </SidebarFooter>
       </Sidebar>
 
@@ -58,7 +92,7 @@ export default function Home(){
           <div>
             <span className="branch">{(data?.profile?.branches||['Main'])[0]} branch</span>
             <Bell size={18}/>
-            <div className="avatar">AM</div>
+            <button className="avatar" style={{border:'none'}} onClick={()=>setActive('Account')} aria-label="Account">{initials}</button>
           </div>
         </header>
 
@@ -74,7 +108,9 @@ export default function Home(){
             </button>
           </div>
 
-          {active!=='Overview'
+          {active==='Account'
+            ?<AccountPage user={user}/>
+            :active!=='Overview'
             ?<Studio section={active}/>
             :loading
               ?<><div className="stats">{Array.from({length:4}).map((_,i)=><div key={i} className="stat" style={{minHeight:100}}><div style={{height:10,width:60,background:'#eef0ec',borderRadius:4,marginBottom:12}}/><div style={{height:30,width:80,background:'#eef0ec',borderRadius:6,marginBottom:8}}/><div style={{height:10,width:120,background:'#eef0ec',borderRadius:4}}/></div>)}</div>
@@ -124,7 +160,7 @@ export default function Home(){
                   <div className="activity-list">
                     <div className="activity-header"><h3>Quick tips</h3></div>
                     <div className="activity-item"><Star size={14} color="#f59e0b" style={{marginTop:2}}/><div><div className="activity-text">Feature your best dishes with the <b>featured</b> flag</div><div className="activity-time">Featured items stand out to customers</div></div></div>
-                    <div className="activity-item"><Globe size={14} color="#286b50" style={{marginTop:2}}/><div><div className="activity-text">Add Arabic translations for bilingual menus</div><div className="activity-time">MenuCraft auto-detects and switches RTL</div></div></div>
+                    <div className="activity-item"><Globe size={14} color="#1b4332" style={{marginTop:2}}/><div><div className="activity-text">Add Arabic translations for bilingual menus</div><div className="activity-time">MenuCraft auto-detects and switches RTL</div></div></div>
                     <div className="activity-item"><QrCode size={14} color="#8b5cf6" style={{marginTop:2}}/><div><div className="activity-text">Print your QR code on tables</div><div className="activity-time">Customers scan and view instantly</div></div></div>
                   </div>
                 </div>

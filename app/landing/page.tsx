@@ -49,8 +49,11 @@ export default function Landing(){
     <nav className="landing-nav">
       <div className="landing-nav-inner">
         <div className="landing-nav-brand">
-          <span className="landing-nav-logo"><Utensils size={18}/></span>
-          <span className="landing-nav-name">MenuCraft<span className="landing-nav-dot">.</span></span>
+          <span className="landing-nav-logo" style={{position:'relative'}}>
+            <Utensils size={18}/>
+            <img src="/logo.png" alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%'}} onError={e=>{e.currentTarget.style.display='none'}}/>
+          </span>
+          <span className="landing-nav-name">Menu<span className="brand-craft">Craft</span><span className="landing-nav-dot">.</span></span>
         </div>
         <div className={`landing-nav-links ${mobileMenu?'open':''}`}>
           <a href="#features">Features</a>
@@ -171,8 +174,11 @@ export default function Landing(){
     <footer className="landing-footer">
       <div className="landing-footer-inner">
         <div className="landing-footer-brand">
-          <span className="landing-nav-logo"><Utensils size={16}/></span>
-          <span>MenuCraft<span className="landing-nav-dot">.</span></span>
+          <span className="landing-nav-logo" style={{position:'relative'}}>
+            <Utensils size={16}/>
+            <img src="/logo.png" alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%'}} onError={e=>{e.currentTarget.style.display='none'}}/>
+          </span>
+          <span>Menu<span className="brand-craft">Craft</span><span className="landing-nav-dot">.</span></span>
         </div>
         <div className="landing-footer-links">
           <a href="#features">Features</a>

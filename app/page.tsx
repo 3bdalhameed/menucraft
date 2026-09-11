@@ -5,5 +5,5 @@ export const dynamic='force-dynamic';
 export default async function Home(){
   const user=await getChatGPTUser();
   if(!user)return <Landing/>;
-  return <Dashboard/>;
+  return <Dashboard user={user}/>;
 }

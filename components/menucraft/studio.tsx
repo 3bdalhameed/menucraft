@@ -42,7 +42,7 @@ export default function Studio({section}:{section:string}){
   const [preview,setPreview]=useState(false);
   const [width,setWidth]=useState(390);
   const [qr,setQr]=useState('');
-  const [qrColor,setQrColor]=useState('#286b50');
+  const [qrColor,setQrColor]=useState('#1b4332');
   const [query,setQuery]=useState('');
   const [designerTab,setDesignerTab]=useState('templates');
   const [saveState,setSaveState]=useState<'saved'|'dirty'|'saving'>('saved');
@@ -335,7 +335,7 @@ export default function Studio({section}:{section:string}){
           </div>
           <label>Text &amp; accent color<Input type="color" value={menu.design.primary} onChange={e=>update({...menu,design:{...menu.design,primary:e.target.value}})}/></label>
           <div className="color-presets">
-            {['#3e6347','#e4cd95','#333333','#8d4025','#9c422b','#5a3e2a','#94614f','#473d27','#775b2e','#ead9b3','#3c7365','#286b50','#7c3aed','#b45309','#0f766e'].map(c=><button key={c} style={{background:c}} title={c} onClick={()=>update({...menu,design:{...menu.design,primary:c}})}/>)}
+            {['#3e6347','#e4cd95','#333333','#8d4025','#9c422b','#5a3e2a','#94614f','#473d27','#775b2e','#ead9b3','#3c7365','#1b4332','#7c3aed','#b45309','#0f766e'].map(c=><button key={c} style={{background:c}} title={c} onClick={()=>update({...menu,design:{...menu.design,primary:c}})}/>)}
           </div>
         </>}
 
@@ -355,7 +355,7 @@ export default function Studio({section}:{section:string}){
         {designerTab==='qr'&&<>
           <p className="aside-caption">Your stable QR code link. Customize in the QR Codes tab.</p>
           <div className="qr-link-preview">
-            <QrIcon size={32} color="#286b50"/>
+            <QrIcon size={32} color="#1b4332"/>
             <span>/menu/{state.slug}/{menu.slug}</span>
           </div>
           <label>QR color<Input type="color" value={qrColor} onChange={e=>setQrColor(e.target.value)}/></label>

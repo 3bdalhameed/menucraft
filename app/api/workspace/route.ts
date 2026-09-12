@@ -3,9 +3,10 @@ import {stateSchema} from '@/lib/menucraft/model';
 
 export async function GET(){
   try{
-    return Response.json(await workspace());
+    return Response.json(await workspace(),{headers:{'Cache-Control':'private, no-store'}});
   }catch(e){
-    return Response.json({error:String(e)},{status:401});
+    const unauthorized=e instanceof Error&&e.message==='Unauthorized';
+    return Response.json({error:unauthorized?'Please log in to continue.':'Your workspace could not be loaded. Please try again.'},{status:unauthorized?401:500});
   }
 }
 
@@ -25,6 +26,7 @@ export async function POST(request:Request){
 
     if(body.action==='save'){
       const state=stateSchema.parse(body.state);
+      if(!state.profile.name.trim())return Response.json({error:'Enter your restaurant name before saving.'},{status:400});
       return Response.json({revision:await save(state)});
     }
 
@@ -34,7 +36,9 @@ export async function POST(request:Request){
       const row=await db().prepare('SELECT data FROM records WHERE restaurant_id=? AND id=? AND kind=?')
         .bind(r.id,body.menuId,'menu').first<{data:string}>();
       if(!row)throw new Error('Menu not found');
-      const menu=JSON.parse(row.data),snapshot=JSON.stringify({profile:JSON.parse(r.profile),menu}),date=new Date().toISOString();
+      const menu=JSON.parse(row.data);
+      if(!JSON.parse(r.profile).name.trim()||!menu.items.some((item:{hidden:boolean})=>!item.hidden))return Response.json({error:'Add your restaurant name and at least one visible dish before publishing.'},{status:400});
+      const snapshot=JSON.stringify({profile:JSON.parse(r.profile),menu}),date=new Date().toISOString();
       await db().batch([
         db().prepare('INSERT INTO publications(id,restaurant_id,slug,snapshot,published_at) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET snapshot=excluded.snapshot,published_at=excluded.published_at WHERE publications.restaurant_id=excluded.restaurant_id')
           .bind(menu.id,r.id,menu.slug,snapshot,date),
@@ -66,6 +70,7 @@ export async function POST(request:Request){
 
     return Response.json({error:'Unknown action'},{status:400});
   }catch(e){
+    if(e instanceof Error&&e.message==='Unauthorized')return Response.json({error:'Please log in to continue.'},{status:401});
     return Response.json({error:String(e)},{status:400});
   }
 }

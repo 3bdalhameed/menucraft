@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'MenuCraft | Restaurant workspace', description: 'Create, design and publish your restaurant menus.',
+  title: 'TableMint | Digital menus for your restaurant', description: 'Design, publish, and share bilingual restaurant menus with TableMint. Essentials: $10 USD per month.',
 };
 
 export default function RootLayout({

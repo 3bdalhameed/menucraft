@@ -24,9 +24,11 @@ export function MenuRenderer({menu,profile}:{menu:Menu;profile:State['profile']}
 
   useEffect(()=>{
     if(!detail)return;
+    const previousOverflow=document.body.style.overflow;
+    document.body.style.overflow='hidden';
     const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')setDetail(null)};
     window.addEventListener('keydown',onKey);
-    return()=>window.removeEventListener('keydown',onKey);
+    return()=>{window.removeEventListener('keydown',onKey);document.body.style.overflow=previousOverflow};
   },[detail]);
 
   const dietaryFilters=useMemo(()=>{

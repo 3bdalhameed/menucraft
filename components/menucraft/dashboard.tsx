@@ -1,12 +1,15 @@
 'use client';
 import {useState,useEffect} from 'react';
+import Onboarding from '@/components/menucraft/onboarding';
+import DashboardCharts from '@/components/menucraft/dashboard-charts';
+import Billing from '@/components/menucraft/billing';
 import Studio from '@/components/menucraft/studio';
 import {Input} from '@/components/ui/input';
 import type {ChatGPTUser} from '@/app/chatgpt-auth';
-import {BookOpen,LayoutDashboard,Palette,Layers,Utensils,Image,QrCode,Settings,Plus,ArrowUpRight,ChevronRight,Bell,Globe,Star,UserCircle,LogOut,Mail} from 'lucide-react';
+import {BookOpen,LayoutDashboard,Palette,Layers,Utensils,Image,QrCode,Settings,Plus,ArrowUpRight,ChevronRight,CreditCard,Globe,Star,UserCircle,LogOut,Mail} from 'lucide-react';
 import {SidebarProvider,Sidebar,SidebarContent,SidebarHeader,SidebarMenu,SidebarMenuItem,SidebarMenuButton,SidebarFooter,SidebarTrigger} from '@/components/ui/sidebar';
 
-const links=[['Overview',LayoutDashboard],['Menus',BookOpen],['Menu Designer',Palette],['Categories',Layers],['Items',Utensils],['Media Library',Image],['QR Codes',QrCode],['Themes',Palette],['Restaurant Settings',Settings],['Account',UserCircle]] as const;
+const links=[['Overview',LayoutDashboard],['Menus',BookOpen],['Menu Designer',Palette],['Categories',Layers],['Items',Utensils],['Media Library',Image],['QR Codes',QrCode],['Themes',Palette],['Restaurant Settings',Settings],['Billing',CreditCard],['Account',UserCircle]] as const;
 
 function AccountPage({user}:{user:ChatGPTUser}){
   const initials=(user.displayName||user.email||'?').trim().slice(0,1).toUpperCase();
@@ -34,19 +37,24 @@ export default function Home({user}:{user:ChatGPTUser}){
   const [active,setActive]=useState('Overview');
   const [data,setData]=useState<any>(null);
   const [loading,setLoading]=useState(true);
+  const [loadError,setLoadError]=useState('');
+  const [refresh,setRefresh]=useState(0);
 
   useEffect(()=>{
     if(active==='Overview'){
       setLoading(true);
-      fetch('/api/workspace').then(r=>r.ok?r.json():null).then(d=>{setData(d);setLoading(false)}).catch(()=>setLoading(false));
+      setLoadError('');
+      const controller=new AbortController();
+      fetch('/api/workspace',{signal:controller.signal}).then(async r=>{if(r.status===401){window.location.assign('/login');return null;}if(!r.ok)throw new Error('Your workspace could not be loaded. Please try again.');return r.json()}).then(d=>{if(d)setData(d);setLoading(false)}).catch(error=>{if(error.name!=='AbortError'){setLoadError(error.message);setLoading(false)}});
+      return()=>controller.abort();
     }
-  },[active]);
+  },[active,refresh]);
 
   const totalItems=data?.menus?.reduce((sum:number,m:any)=>sum+m.items.length,0)||0;
   const totalViews=data?.analytics?.find((a:any)=>a.kind==='view')?.count||0;
   const totalQr=data?.analytics?.find((a:any)=>a.kind==='qr')?.count||0;
   const publishedCount=data?.published?.length||0;
-  const draftCount=(data?.menus?.length||0)-publishedCount;
+  const draftCount=data?.menus?.filter((m:any)=>!data.published.some((p:any)=>p.id===m.id)).length||0;
   const initials=(user.displayName||user.email||'?').trim().slice(0,1).toUpperCase();
 
   return (
@@ -56,9 +64,8 @@ export default function Home({user}:{user:ChatGPTUser}){
           <div className="brand">
             <span style={{position:'relative'}}>
               <Utensils size={21}/>
-              <img src="/logo.png" alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%'}} onError={e=>{e.currentTarget.style.display='none'}}/>
             </span>
-            Menu<span className="brand-craft">Craft</span><span className="brand-dot">.</span>
+            Table<span className="brand-craft">Mint</span><span className="brand-dot">.</span>
           </div>
           <div className="restaurant">
             {data?.profile?.logo?<img src={data.profile.logo} alt="Logo" style={{width:38,height:38,borderRadius:9,objectFit:'cover'}}/>:<div className="monogram">{(data?.profile?.name||'O')[0]}</div>}
@@ -70,7 +77,7 @@ export default function Home({user}:{user:ChatGPTUser}){
           <SidebarMenu>
             {links.map(([label,Icon])=>(
               <SidebarMenuItem key={label}>
-                <SidebarMenuButton isActive={active===label} onClick={()=>setActive(label)}>
+                <SidebarMenuButton isActive={active===label} onClick={()=>{if(!data?.setupRequired)setActive(label)}} disabled={data?.setupRequired&&label!=='Overview'}>
                   <Icon/><span>{label}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -91,7 +98,7 @@ export default function Home({user}:{user:ChatGPTUser}){
           <div><SidebarTrigger/><span>Workspace</span><ChevronRight size={14}/><b>{active}</b></div>
           <div>
             <span className="branch">{(data?.profile?.branches||['Main'])[0]} branch</span>
-            <Bell size={18}/>
+            <a href="/" className="view-link">View website</a>
             <button className="avatar" style={{border:'none'}} onClick={()=>setActive('Account')} aria-label="Account">{initials}</button>
           </div>
         </header>
@@ -108,7 +115,10 @@ export default function Home({user}:{user:ChatGPTUser}){
             </button>
           </div>
 
-          {active==='Account'
+          {loadError?<div className="setup-card" role="alert"><h2>Let’s try that again.</h2><p>{loadError}</p><button className="primary" onClick={()=>setRefresh(value=>value+1)}>Reload workspace</button></div>
+            :data?.setupRequired?<Onboarding workspace={data} onComplete={()=>{setActive('Overview');setRefresh(value=>value+1)}}/>
+            :active==='Billing'?<Billing/>
+            :active==='Account'
             ?<AccountPage user={user}/>
             :active!=='Overview'
             ?<Studio section={active}/>
@@ -130,6 +140,8 @@ export default function Home({user}:{user:ChatGPTUser}){
                   <div className="stat"><small>QR code scans</small><strong>{totalQr}</strong><span>Scans from printed QR codes</span></div>
                 </div>
 
+                <DashboardCharts activity={data?.activity} through={data?.analyticsThrough} menus={data?.menus||[]}/>
+
                 <div className="table-wrap">
                   <div className="table-header"><h3>Your menus</h3><span style={{fontSize:11,color:'#839384'}}>{data?.menus?.length||0} menus</span></div>
                   <table>
@@ -141,7 +153,7 @@ export default function Home({user}:{user:ChatGPTUser}){
                           <td>{m.categories.length}</td>
                           <td>{m.items.length}</td>
                           <td><span className={`status-badge ${data.published.some((p:any)=>p.id===m.id)?'published':'draft'}`}>{data.published.some((p:any)=>p.id===m.id)?'Published':'Draft'}</span></td>
-                          <td><a className="view-link" href={`/menu/${data.slug}/${m.slug}`} target="_blank">/menu/{data.slug}/{m.slug} <ArrowUpRight size={11}/></a></td>
+                          <td>{data.published.some((p:any)=>p.id===m.id)?<a className="view-link" href={`/menu/${data.slug}/${m.slug}`} target="_blank" rel="noopener noreferrer">Open menu <ArrowUpRight size={11}/></a>:<span>Publish to get a public link</span>}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -160,7 +172,7 @@ export default function Home({user}:{user:ChatGPTUser}){
                   <div className="activity-list">
                     <div className="activity-header"><h3>Quick tips</h3></div>
                     <div className="activity-item"><Star size={14} color="#f59e0b" style={{marginTop:2}}/><div><div className="activity-text">Feature your best dishes with the <b>featured</b> flag</div><div className="activity-time">Featured items stand out to customers</div></div></div>
-                    <div className="activity-item"><Globe size={14} color="#1b4332" style={{marginTop:2}}/><div><div className="activity-text">Add Arabic translations for bilingual menus</div><div className="activity-time">MenuCraft auto-detects and switches RTL</div></div></div>
+                    <div className="activity-item"><Globe size={14} color="#1b4332" style={{marginTop:2}}/><div><div className="activity-text">Add Arabic translations for bilingual menus</div><div className="activity-time">TableMint auto-detects and switches RTL</div></div></div>
                     <div className="activity-item"><QrCode size={14} color="#8b5cf6" style={{marginTop:2}}/><div><div className="activity-text">Print your QR code on tables</div><div className="activity-time">Customers scan and view instantly</div></div></div>
                   </div>
                 </div>

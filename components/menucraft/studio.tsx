@@ -107,7 +107,7 @@ export default function Studio({section}:{section:string}){
     return()=>lifecycle.abort();
   },[]);
 
-  if(error)return<div className="editor-panel"><h2>Workspace couldn&apos;t load</h2><p>{error}</p><a href="/signin-with-chatgpt?return_to=/" target="_top">Sign in with ChatGPT</a></div>;
+  if(error)return<div className="editor-panel"><h2>Workspace couldn&apos;t load</h2><p>{error}</p><a href="/login">Return to login</a></div>;
   if(!state||!menu)return<p role="status">Loading your restaurant…</p>;
 
   const makeMenu=()=>{const id=crypto.randomUUID();change({...state,menus:[...state.menus,{id,name:'Untitled menu',slug:'menu-'+id.slice(0,8),design:{...baseDesign},categories:[],items:[]}]});setSelected(id)};
